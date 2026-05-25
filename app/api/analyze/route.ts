@@ -7,7 +7,7 @@ import {
   COLORS,
 } from "@/lib/okey-optimizer";
 
-const FLASK_URL = "http://localhost:5001";
+const FLASK_URL = process.env.FLASK_URL || "http://localhost:5001";
 
 export async function POST(req: NextRequest) {
   try {
