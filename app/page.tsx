@@ -82,19 +82,42 @@ export default function Home() {
     setError(null);
     
     try {
-      const formData = new FormData();
-      if (imageFile && !overrideTiles) {
-        formData.append("image", imageFile);
+      let tileLabels: string[] = [];
+
+      if (overrideTiles) {
+        // Send just the tile labels for re-optimization without hitting Python again
+        tileLabels = overrideTiles.map(t => t.isSahteOkey ? "joker" : `${t.color}_${t.number}`);
+      } else if (imageFile) {
+        // 1. Call the Flask backend DIRECTLY from the browser to bypass Netlify's 10-second timeout
+        const FLASK_URL = process.env.NEXT_PUBLIC_FLASK_URL || "http://localhost:5001";
+        const flaskForm = new FormData();
+        flaskForm.append("image", imageFile);
+
+        let flaskRes: Response;
+        try {
+          flaskRes = await fetch(`${FLASK_URL}/predict`, {
+            method: "POST",
+            body: flaskForm,
+          });
+        } catch (err) {
+          throw new Error("Yapay zeka sunucusuna erişilemedi. Lütfen backend'in açık ve internete bağlı olduğundan emin olun.");
+        }
+
+        if (!flaskRes.ok) {
+          const errData = await flaskRes.json();
+          throw new Error(errData.error || "Yapay zeka sunucusu hata verdi.");
+        }
+
+        const flaskData = await flaskRes.json();
+        tileLabels = flaskData.tiles as string[];
       }
+
+      // 2. Now call our Next.js api to run the fast solver logic with the tile labels
+      const formData = new FormData();
       formData.append("gostergeColor", gostergeColor);
       formData.append("gostergeNumber", gostergeNumber.toString());
       formData.append("gostergeFlagged", gostergeFlagged ? "true" : "false");
-      
-      if (overrideTiles) {
-        // Send just the tile labels for re-optimization without hitting Python again
-        const labels = overrideTiles.map(t => t.isSahteOkey ? "joker" : `${t.color}_${t.number}`);
-        formData.append("tilesOverride", JSON.stringify(labels));
-      }
+      formData.append("tilesOverride", JSON.stringify(tileLabels));
 
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -103,7 +126,7 @@ export default function Home() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Sunucu hatası (Flask açık mı?)");
+        throw new Error(data.error || "Optimizasyon sunucu hatası.");
       }
 
       const data = await res.json();
