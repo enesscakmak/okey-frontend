@@ -164,10 +164,11 @@ function isSeri(tiles: Tile[]): boolean {
 
 /**
  * Check if a set of tiles forms a valid GRUP (group).
- * Grup: 3–5 tiles, same number, different colors (sahte okey acts as okey's resolved value)
+ * Grup: 3–4 tiles, same number, different colors (sahte okey acts as okey's resolved value).
+ * Max is 4 because there are only 4 colors; an okey wild replaces a missing color, not a 5th one.
  */
 function isGrup(tiles: Tile[]): boolean {
-  if (tiles.length < 3 || tiles.length > 5) return false; // max 4 real colors + 1 wild but limit is 5
+  if (tiles.length < 3 || tiles.length > 4) return false; // max 4: one tile per color (red/blue/black/yellow)
   const nonWild = tiles.filter((t) => !t.isOkey);
 
   if (nonWild.length === 0) return false;
