@@ -771,21 +771,12 @@ body::before {
 
 .camera-guide {
   position: relative;
-  width: min(88vw, 720px);
-  height: auto;
-  max-height: min(42vh, 220px);
+  flex-shrink: 0;
   border: 2px dashed rgba(255, 255, 255, 0.82);
   border-radius: 14px;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.52);
   background: rgba(255, 255, 255, 0.03);
   animation: cameraGuidePulse 2.4s ease-in-out infinite;
-}
-
-@media (orientation: landscape) {
-  .camera-guide {
-    width: min(82vw, 780px);
-    max-height: min(50vh, 260px);
-  }
 }
 
 .camera-guide::before,

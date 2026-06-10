@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { captureAndCropVideoFrame, GUIDE_ASPECT_RATIO, isLandscapeOrientation } from "@/lib/image-crop";
+import {
+  captureAndCropVideoFrame,
+  computeGuideSize,
+  isLandscapeOrientation,
+} from "@/lib/image-crop";
 import { USER_ERRORS, getUserErrorMessage } from "@/lib/user-errors";
 
 interface CameraCaptureProps {
@@ -19,23 +23,48 @@ export default function CameraCapture({
 }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const guideRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isLandscape, setIsLandscape] = useState(true);
+  const [guideSize, setGuideSize] = useState({ width: 0, height: 0 });
+
+  const updateLayout = useCallback(() => {
+    setIsLandscape(isLandscapeOrientation());
+
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const { clientWidth, clientHeight } = viewport;
+    if (clientWidth === 0 || clientHeight === 0) return;
+
+    setGuideSize(computeGuideSize(clientWidth, clientHeight));
+  }, []);
 
   useEffect(() => {
-    const updateOrientation = () => setIsLandscape(isLandscapeOrientation());
-    updateOrientation();
-    window.addEventListener("resize", updateOrientation);
-    window.addEventListener("orientationchange", updateOrientation);
+    if (!open) return;
+
+    updateLayout();
+
+    window.addEventListener("resize", updateLayout);
+    window.addEventListener("orientationchange", updateLayout);
+
+    const viewport = viewportRef.current;
+    const observer =
+      viewport && typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(updateLayout)
+        : null;
+    if (viewport && observer) observer.observe(viewport);
+
     return () => {
-      window.removeEventListener("resize", updateOrientation);
-      window.removeEventListener("orientationchange", updateOrientation);
+      window.removeEventListener("resize", updateLayout);
+      window.removeEventListener("orientationchange", updateLayout);
+      observer?.disconnect();
     };
-  }, [open]);
+  }, [open, updateLayout]);
 
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -69,11 +98,12 @@ export default function CameraCapture({
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
         setIsReady(true);
+        updateLayout();
       }
     } catch {
       setError(USER_ERRORS.cameraPermission);
     }
-  }, []);
+  }, [updateLayout]);
 
   useEffect(() => {
     if (!open) {
@@ -90,7 +120,7 @@ export default function CameraCapture({
   const handleCapture = async () => {
     const video = videoRef.current;
     const guide = guideRef.current;
-    if (!video || !guide || !isReady || isCapturing) return;
+    if (!video || !guide || !isReady || isCapturing || !isLandscape) return;
 
     setIsCapturing(true);
     setError(null);
@@ -104,9 +134,7 @@ export default function CameraCapture({
       onCapture(file);
       onClose();
     } catch (err) {
-      setError(
-        getUserErrorMessage(err, USER_ERRORS.photoCaptureFailed),
-      );
+      setError(getUserErrorMessage(err, USER_ERRORS.photoCaptureFailed));
     } finally {
       setIsCapturing(false);
     }
@@ -135,12 +163,12 @@ export default function CameraCapture({
           <span>
             {isLandscape
               ? "İstekeyi yatay çerçeveye hizalayın, taşlar net görünsün"
-              : "En doğru sonuç için telefonu yatay çevirin"}
+              : "Çekim için telefonu yatay çevirin"}
           </span>
         </div>
       </div>
 
-      <div className="camera-viewport">
+      <div className="camera-viewport" ref={viewportRef}>
         <video
           ref={videoRef}
           className="camera-video"
@@ -153,7 +181,10 @@ export default function CameraCapture({
           <div
             ref={guideRef}
             className="camera-guide"
-            style={{ aspectRatio: GUIDE_ASPECT_RATIO }}
+            style={{
+              width: guideSize.width || undefined,
+              height: guideSize.height || undefined,
+            }}
           >
             <span className="camera-guide-label">Çekim alanı</span>
           </div>
@@ -190,7 +221,7 @@ export default function CameraCapture({
           type="button"
           className="btn btn-primary camera-shutter-btn"
           onClick={handleCapture}
-          disabled={!isReady || isCapturing}
+          disabled={!isReady || isCapturing || !isLandscape}
         >
           {isCapturing ? (
             <>

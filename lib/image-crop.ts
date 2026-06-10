@@ -10,6 +10,25 @@ export interface CropRect {
 /** Yatay isteke çerçevesi en/boy oranı (genişlik ÷ yükseklik). */
 export const GUIDE_ASPECT_RATIO = 2.3;
 
+export function computeGuideSize(
+	viewportWidth: number,
+	viewportHeight: number,
+	aspectRatio = GUIDE_ASPECT_RATIO,
+): { width: number; height: number } {
+	let guideW = viewportWidth * 0.88;
+	let guideH = guideW / aspectRatio;
+
+	if (guideH > viewportHeight * 0.72) {
+		guideH = viewportHeight * 0.72;
+		guideW = guideH * aspectRatio;
+	}
+
+	return {
+		width: Math.round(guideW),
+		height: Math.round(guideH),
+	};
+}
+
 export function isLandscapeOrientation(): boolean {
 	if (typeof window === "undefined") return true;
 	return window.innerWidth > window.innerHeight;
