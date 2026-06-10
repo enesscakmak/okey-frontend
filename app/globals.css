@@ -771,9 +771,9 @@ body::before {
 
 .camera-guide {
   position: relative;
-  height: min(72vh, 540px);
-  width: auto;
-  max-width: 90vw;
+  width: min(88vw, 720px);
+  height: auto;
+  max-height: min(42vh, 220px);
   border: 2px dashed rgba(255, 255, 255, 0.82);
   border-radius: 14px;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.52);
@@ -783,7 +783,8 @@ body::before {
 
 @media (orientation: landscape) {
   .camera-guide {
-    height: min(78vh, 580px);
+    width: min(82vw, 780px);
+    max-height: min(50vh, 260px);
   }
 }
 

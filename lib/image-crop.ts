@@ -7,8 +7,26 @@ export interface CropRect {
 	height: number;
 }
 
-/** Çekim çerçevesi en/boy oranı (genişlik / yükseklik). */
-export const GUIDE_ASPECT_RATIO = 1 / 2.3;
+/** Yatay isteke çerçevesi en/boy oranı (genişlik ÷ yükseklik). */
+export const GUIDE_ASPECT_RATIO = 2.3;
+
+export function isLandscapeOrientation(): boolean {
+	if (typeof window === "undefined") return true;
+	return window.innerWidth > window.innerHeight;
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+	return new Promise((resolve, reject) => {
+		canvas.toBlob(
+			(blob) =>
+				blob
+					? resolve(blob)
+					: reject(new Error(USER_ERRORS.photoCaptureFailed)),
+			"image/jpeg",
+			0.92,
+		);
+	});
+}
 
 /** object-fit: cover ile gösterilen video koordinatlarını gerçek piksel alanına çevirir. */
 export function mapDisplayRectToVideoCoords(
@@ -110,19 +128,10 @@ export async function captureAndCropVideoFrame(
 		crop.height,
 	);
 
-	return new Promise((resolve, reject) => {
-		canvas.toBlob(
-			(blob) =>
-				blob
-					? resolve(blob)
-					: reject(new Error(USER_ERRORS.photoCaptureFailed)),
-			"image/jpeg",
-			0.92,
-		);
-	});
+	return canvasToBlob(canvas);
 }
 
-/** Dosyadan gelen görseli aynı oranlı çerçeveye göre kırpar */
+/** Dosyadan gelen görseli yatay isteke çerçevesine göre kırpar. */
 export async function cropImageFile(
 	file: File,
 	aspectRatio = GUIDE_ASPECT_RATIO,
@@ -167,16 +176,7 @@ export async function cropImageFile(
 		crop.height,
 	);
 
-	const blob = await new Promise<Blob>((resolve, reject) => {
-		canvas.toBlob(
-			(b) =>
-				b
-					? resolve(b)
-					: reject(new Error(USER_ERRORS.photoCaptureFailed)),
-			"image/jpeg",
-			0.92,
-		);
-	});
+	const blob = await canvasToBlob(canvas);
 
 	return new File([blob], `isteke-${Date.now()}.jpg`, { type: "image/jpeg" });
 }

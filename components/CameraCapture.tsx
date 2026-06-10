@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { captureAndCropVideoFrame, GUIDE_ASPECT_RATIO } from "@/lib/image-crop";
+import { captureAndCropVideoFrame, GUIDE_ASPECT_RATIO, isLandscapeOrientation } from "@/lib/image-crop";
 import { USER_ERRORS, getUserErrorMessage } from "@/lib/user-errors";
 
 interface CameraCaptureProps {
@@ -24,6 +24,18 @@ export default function CameraCapture({
   const [error, setError] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(true);
+
+  useEffect(() => {
+    const updateOrientation = () => setIsLandscape(isLandscapeOrientation());
+    updateOrientation();
+    window.addEventListener("resize", updateOrientation);
+    window.addEventListener("orientationchange", updateOrientation);
+    return () => {
+      window.removeEventListener("resize", updateOrientation);
+      window.removeEventListener("orientationchange", updateOrientation);
+    };
+  }, [open]);
 
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -120,7 +132,11 @@ export default function CameraCapture({
         </button>
         <div className="camera-header-text">
           <strong>Telefonu Yatay Tutun</strong>
-          <span>İstekeyi dikey çerçeveye hizalayın, taşlar net görünsün</span>
+          <span>
+            {isLandscape
+              ? "İstekeyi yatay çerçeveye hizalayın, taşlar net görünsün"
+              : "En doğru sonuç için telefonu yatay çevirin"}
+          </span>
         </div>
       </div>
 
