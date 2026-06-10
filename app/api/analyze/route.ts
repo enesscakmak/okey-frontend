@@ -6,6 +6,7 @@ import {
   TileColor,
   COLORS,
 } from "@/lib/okey-optimizer";
+import { USER_ERRORS } from "@/lib/user-errors";
 
 const FLASK_URL = process.env.FLASK_URL || "http://localhost:5001";
 
@@ -16,28 +17,27 @@ export async function POST(req: NextRequest) {
     const gostergeColor = formData.get("gostergeColor") as TileColor;
     const gostergeNumber = parseInt(formData.get("gostergeNumber") as string, 10);
     const gostergeFlagged = formData.get("gostergeFlagged") === "true";
-    // Optional: user-overridden tiles after correction
     const tilesOverrideRaw = formData.get("tilesOverride") as string | null;
 
     if (!imageFile && !tilesOverrideRaw) {
-      return NextResponse.json({ error: "Görsel veya taş bilgisi gönderilmedi." }, { status: 400 });
+      return NextResponse.json({ error: USER_ERRORS.missingPhoto }, { status: 400 });
     }
 
-    // Validate gösterge
     if (!gostergeColor || !COLORS.includes(gostergeColor) || isNaN(gostergeNumber)) {
-      return NextResponse.json({ error: "Geçersiz gösterge taşı." }, { status: 400 });
+      return NextResponse.json({ error: USER_ERRORS.invalidGosterge }, { status: 400 });
     }
 
-    // Derive okey
     const okey = deriveOkey(gostergeColor, gostergeNumber);
 
     let tileLabels: string[] = [];
 
     if (tilesOverrideRaw) {
-      // User has manually corrected tiles — use them directly
-      tileLabels = JSON.parse(tilesOverrideRaw);
+      try {
+        tileLabels = JSON.parse(tilesOverrideRaw);
+      } catch {
+        return NextResponse.json({ error: USER_ERRORS.generic }, { status: 400 });
+      }
     } else if (imageFile) {
-      // Forward image to Flask pipeline
       const flaskForm = new FormData();
       const arrayBuffer = await imageFile.arrayBuffer();
       const blob = new Blob([arrayBuffer], { type: imageFile.type });
@@ -49,31 +49,30 @@ export async function POST(req: NextRequest) {
           method: "POST",
           body: flaskForm,
         });
-      } catch {
+      } catch (err) {
+        console.error("[/api/analyze] detection service unreachable", err);
         return NextResponse.json(
-          {
-            error:
-              "Yapay zeka sunucusuna erişilemedi. Lütfen start_server.bat dosyasını çalıştırın.",
-          },
+          { error: USER_ERRORS.analysisUnavailable },
           { status: 503 }
         );
       }
 
       if (!flaskRes.ok) {
-        const err = await flaskRes.json();
-        return NextResponse.json({ error: err.error ?? "Yapay zeka sunucusu hatası." }, { status: 500 });
+        console.error("[/api/analyze] detection service error", flaskRes.status);
+        return NextResponse.json(
+          { error: USER_ERRORS.analysisFailed },
+          { status: 500 }
+        );
       }
 
       const flaskData = await flaskRes.json();
       tileLabels = flaskData.tiles as string[];
     }
 
-    // Parse tile labels into Tile objects
     const tiles = tileLabels.map((label, i) =>
       parseTileLabel(label, i, okey.color, okey.number)
     );
 
-    // Run optimizer
     const result = optimize(tiles, gostergeFlagged, {
       color: gostergeColor,
       number: gostergeNumber,
@@ -88,7 +87,7 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     console.error("[/api/analyze]", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Bilinmeyen bir hata oluştu." },
+      { error: USER_ERRORS.generic },
       { status: 500 }
     );
   }

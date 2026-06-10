@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef } from "react";
 import {
 	TileColor,
 	COLOR_LABELS,
 	Tile,
 	OptimizationResult as OptRes,
 } from "@/lib/okey-optimizer";
+import { cropImageFile } from "@/lib/image-crop";
+import { USER_ERRORS, getUserErrorMessage, getApiErrorMessage } from "@/lib/user-errors";
 import RackDisplay from "@/components/RackDisplay";
 import OptimizationResult from "@/components/OptimizationResult";
+import CameraCapture from "@/components/CameraCapture";
 
 export default function Home() {
 	const [gostergeColor, setGostergeColor] = useState<TileColor>("red");
@@ -20,8 +23,8 @@ export default function Home() {
 
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [cameraOpen, setCameraOpen] = useState(false);
 
-	// Results
 	const [tiles, setTiles] = useState<Tile[] | null>(null);
 	const [okey, setOkey] = useState<{
 		color: TileColor;
@@ -34,19 +37,42 @@ export default function Home() {
 	} | null>(null);
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const cameraFallbackRef = useRef<HTMLInputElement>(null);
 
 	const derivedOkeyNumber = gostergeNumber === 13 ? 1 : gostergeNumber + 1;
 
+	const applyImageFile = (file: File) => {
+		setImageFile(file);
+		setPreviewUrl(URL.createObjectURL(file));
+		setTiles(null);
+		setResults(null);
+		setError(null);
+	};
+
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (e.target.files && e.target.files.length > 0) {
-			const file = e.target.files[0];
-			setImageFile(file);
-			setPreviewUrl(URL.createObjectURL(file));
-			// Reset state for new photo
-			setTiles(null);
-			setResults(null);
-			setError(null);
+			applyImageFile(e.target.files[0]);
 		}
+	};
+
+	const handleCameraFallback = async (
+		e: React.ChangeEvent<HTMLInputElement>,
+	) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		try {
+			const cropped = await cropImageFile(file);
+			applyImageFile(cropped);
+		} catch {
+			applyImageFile(file);
+		} finally {
+			e.target.value = "";
+		}
+	};
+
+	const handleCameraCapture = (file: File) => {
+		applyImageFile(file);
 	};
 
 	const handleDragOver = (e: React.DragEvent) => {
@@ -65,11 +91,7 @@ export default function Home() {
 		if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
 			const file = e.dataTransfer.files[0];
 			if (file.type.startsWith("image/")) {
-				setImageFile(file);
-				setPreviewUrl(URL.createObjectURL(file));
-				setTiles(null);
-				setResults(null);
-				setError(null);
+				applyImageFile(file);
 			}
 		}
 	};
@@ -93,12 +115,12 @@ export default function Home() {
 			let tileLabels: string[] = [];
 
 			if (overrideTiles) {
-				// Send just the tile labels for re-optimization without hitting Python again
+				// Taş düzeltmesi sonrası Python sunucusuna tekrar gitmeden yeniden optimize et
 				tileLabels = overrideTiles.map((t) =>
 					t.isSahteOkey ? "joker" : `${t.color}_${t.number}`,
 				);
 			} else if (imageFile) {
-				// 1. Call the Flask backend DIRECTLY from the browser to bypass Netlify's 10-second timeout
+				// Netlify 10 sn limitini aşmamak için Flask doğrudan tarayıcıdan çağrılır
 				const FLASK_URL =
 					process.env.NEXT_PUBLIC_FLASK_URL ||
 					"http://localhost:5001";
@@ -111,24 +133,18 @@ export default function Home() {
 						method: "POST",
 						body: flaskForm,
 					});
-				} catch (err) {
-					throw new Error(
-						"Yapay zeka sunucusuna erişilemedi. Lütfen sunucunun açık ve internete bağlı olduğundan emin olun.",
-					);
+				} catch {
+					throw new Error(USER_ERRORS.network);
 				}
 
 				if (!flaskRes.ok) {
-					const errData = await flaskRes.json();
-					throw new Error(
-						errData.error || "Yapay zeka sunucusu hata verdi.",
-					);
+					throw new Error(USER_ERRORS.analysisFailed);
 				}
 
 				const flaskData = await flaskRes.json();
 				tileLabels = flaskData.tiles as string[];
 			}
 
-			// 2. Now call our Next.js api to run the fast solver logic with the tile labels
 			const formData = new FormData();
 			formData.append("gostergeColor", gostergeColor);
 			formData.append("gostergeNumber", gostergeNumber.toString());
@@ -144,13 +160,17 @@ export default function Home() {
 			});
 
 			if (!res.ok) {
-				const data = await res.json();
-				throw new Error(data.error || "Optimizasyon sunucu hatası.");
+				const data = await res.json().catch(() => ({}));
+				throw new Error(
+					getApiErrorMessage(
+						data.error,
+						USER_ERRORS.optimizationFailed,
+					),
+				);
 			}
 
 			const data = await res.json();
 
-			// We must reconstruct the Tile objects from the response labels so that UI updates correctly
 			import("@/lib/okey-optimizer").then((m) => {
 				const reconstructedTiles = data.tiles.map(
 					(label: string, i: number) =>
@@ -166,11 +186,7 @@ export default function Home() {
 				setResults(data.optimization);
 			});
 		} catch (err: unknown) {
-			setError(
-				err instanceof Error
-					? err.message
-					: "Bilinmeyen bir hata oluştu.",
-			);
+			setError(getUserErrorMessage(err));
 		} finally {
 			setIsAnalyzing(false);
 		}
@@ -190,7 +206,6 @@ export default function Home() {
 			</section>
 
 			<div className="page-grid">
-				{/* Step 1: Game Rules Setup */}
 				<div className="glass-card">
 					<div className="section-header">
 						<span className="section-badge">1</span>
@@ -268,7 +283,6 @@ export default function Home() {
 					</label>
 				</div>
 
-				{/* Step 2: Upload */}
 				<div className="glass-card">
 					<div className="section-header">
 						<span className="section-badge">2</span>
@@ -304,16 +318,13 @@ export default function Home() {
 								>
 									Dosya Seç
 								</button>
-								<label className="btn btn-camera">
+								<button
+									type="button"
+									className="btn btn-camera"
+									onClick={() => setCameraOpen(true)}
+								>
 									Kamera ile Çek
-									<input
-										type="file"
-										accept="image/*"
-										capture="environment"
-										style={{ display: "none" }}
-										onChange={handleFileChange}
-									/>
-								</label>
+								</button>
 							</div>
 							<input
 								type="file"
@@ -321,6 +332,14 @@ export default function Home() {
 								accept="image/*"
 								style={{ display: "none" }}
 								onChange={handleFileChange}
+							/>
+							<input
+								type="file"
+								ref={cameraFallbackRef}
+								accept="image/*"
+								capture="environment"
+								style={{ display: "none" }}
+								onChange={handleCameraFallback}
 							/>
 						</div>
 					) : (
@@ -360,18 +379,13 @@ export default function Home() {
 					)}
 				</div>
 
-				{/* Error State */}
 				{error && (
 					<div className="banner banner-error fade-in">
 						<strong>Hata:</strong> {error}
-						<div>
-							Sorun devam ederse yapay zeka sunucusunun
-							(start_server.bat) çalıştığından emin olun.
-						</div>
+						<div>{USER_ERRORS.retryHint}</div>
 					</div>
 				)}
 
-				{/* Step 3: Tiles & Optimization */}
 				{tiles && okey && (
 					<div className="glass-card fade-in">
 						<div className="section-header">
@@ -385,7 +399,7 @@ export default function Home() {
 							okeyNumber={okey.number}
 							onTilesChange={(newTiles) => {
 								setTiles(newTiles);
-								analyzeRack(newTiles); // Re-run optimizer locally
+								analyzeRack(newTiles);
 							}}
 						/>
 
@@ -399,6 +413,13 @@ export default function Home() {
 					</div>
 				)}
 			</div>
+
+			<CameraCapture
+				open={cameraOpen}
+				onClose={() => setCameraOpen(false)}
+				onCapture={handleCameraCapture}
+				onFallback={() => cameraFallbackRef.current?.click()}
+			/>
 		</main>
 	);
 }

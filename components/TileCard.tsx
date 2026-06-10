@@ -63,7 +63,7 @@ export default function TileCard({ tile, isSelected, isLeftover, interactive, on
               value={tile.isSahteOkey ? "joker" : tile.color}
               onChange={(e) => {
                 const val = e.target.value;
-                if (val === "joker") handleSave("red", 1, true); // arbitrary color/num for joker, logic ignores it
+                if (val === "joker") handleSave("red", 1, true);
                 else handleSave(val as TileColor, tile.number, false);
               }}
             >

@@ -14,8 +14,7 @@ interface RackDisplayProps {
 export default function RackDisplay({ tiles, onTilesChange, okeyColor, okeyNumber }: RackDisplayProps) {
   const handleTileChange = (index: number, color: TileColor, num: number, sahteOkey: boolean) => {
     if (!onTilesChange) return;
-    
-    // Convert back to string label to re-parse (easiest way to get full derived states)
+
     const label = sahteOkey ? "joker" : `${color}_${num}`;
     const newTiles = [...tiles];
     newTiles[index] = parseTileLabel(label, index, okeyColor, okeyNumber);

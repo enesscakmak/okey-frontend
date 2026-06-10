@@ -1,6 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap");
 
-/* ── Reset & Base ──────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -55,7 +54,6 @@ body {
   line-height: 1.6;
 }
 
-/* ── Background grid decoration ──────────────────────────────────────────── */
 body::before {
   content: "";
   position: fixed;
@@ -68,7 +66,6 @@ body::before {
   z-index: 0;
 }
 
-/* ── Glass card ───────────────────────────────────────────────────────────── */
 .glass {
   background: rgba(255,255,255,0.03);
   border: 1px solid var(--border);
@@ -93,7 +90,6 @@ body::before {
   pointer-events: none;
 }
 
-/* ── Layout ───────────────────────────────────────────────────────────────── */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -102,7 +98,6 @@ body::before {
   z-index: 1;
 }
 
-/* ── Header / Hero ────────────────────────────────────────────────────────── */
 .hero {
   padding: 3rem 0 2rem;
   text-align: center;
@@ -145,7 +140,6 @@ body::before {
   margin: 0 auto;
 }
 
-/* ── Section header ───────────────────────────────────────────────────────── */
 .section-header {
   display: flex;
   align-items: center;
@@ -177,7 +171,6 @@ body::before {
   font-size: 0.85rem;
 }
 
-/* ── Form elements ────────────────────────────────────────────────────────── */
 .form-row {
   display: flex;
   gap: 1rem;
@@ -265,7 +258,6 @@ body::before {
   color: var(--text);
 }
 
-/* ── Upload zone ──────────────────────────────────────────────────────────── */
 .upload-zone {
   border: 2px dashed var(--border);
   border-radius: var(--radius-lg);
@@ -343,7 +335,6 @@ body::before {
 }
 .preview-remove:hover { background: var(--danger); }
 
-/* ── Buttons ──────────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -403,7 +394,6 @@ body::before {
 }
 .btn-camera:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,188,212,0.3); }
 
-/* ── Tile card ────────────────────────────────────────────────────────────── */
 .tile {
   display: inline-flex;
   flex-direction: column;
@@ -457,7 +447,6 @@ body::before {
 .tile-in-set { opacity: 1; }
 .tile-leftover { opacity: 0.5; filter: grayscale(0.4); }
 
-/* ── Tile edit dropdown ───────────────────────────────────────────────────── */
 .tile-edit-wrap {
   position: relative;
   display: inline-block;
@@ -492,7 +481,6 @@ body::before {
 
 .tile-edit-row { display: flex; gap: 0.5rem; }
 
-/* ── Rack display ─────────────────────────────────────────────────────────── */
 .rack-container {
   display: flex;
   flex-wrap: wrap;
@@ -515,7 +503,6 @@ body::before {
   align-items: center;
 }
 
-/* ── Result panels ────────────────────────────────────────────────────────── */
 .result-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -657,7 +644,6 @@ body::before {
   gap: 0.3rem;
 }
 
-/* ── Loading spinner ──────────────────────────────────────────────────────── */
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .spinner {
@@ -670,7 +656,6 @@ body::before {
   flex-shrink: 0;
 }
 
-/* ── Error / info banners ─────────────────────────────────────────────────── */
 .banner {
   display: flex;
   align-items: flex-start;
@@ -684,14 +669,12 @@ body::before {
 .banner-info  { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #e5e5e5; }
 .banner-success { background: var(--success-bg); border: 1px solid rgba(16, 185, 129, 0.25); color: var(--success); }
 
-/* ── Page layout ──────────────────────────────────────────────────────────── */
 .page-grid {
   display: grid;
   gap: 1.25rem;
   padding-bottom: 4rem;
 }
 
-/* ── Fade-in animation ────────────────────────────────────────────────────── */
 @keyframes fadeSlide {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -699,7 +682,6 @@ body::before {
 
 .fade-in { animation: fadeSlide 0.4s ease forwards; }
 
-/* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .hero h1 { font-size: 2.2rem; }
   .glass-card { padding: 1.25rem; }
@@ -718,5 +700,178 @@ body::before {
   .result-stats { flex-direction: column; gap: 0.5rem; }
 }
 
-/* ── Divider ──────────────────────────────────────────────────────────────── */
+.camera-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+
+.camera-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  padding-top: max(0.85rem, env(safe-area-inset-top));
+  background: rgba(10, 10, 15, 0.92);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.camera-close-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.camera-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.camera-header-text strong {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.camera-header-text span {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.camera-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.camera-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.camera-guide {
+  position: relative;
+  height: min(72vh, 540px);
+  width: auto;
+  max-width: 90vw;
+  border: 2px dashed rgba(255, 255, 255, 0.82);
+  border-radius: 14px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.52);
+  background: rgba(255, 255, 255, 0.03);
+  animation: cameraGuidePulse 2.4s ease-in-out infinite;
+}
+
+@media (orientation: landscape) {
+  .camera-guide {
+    height: min(78vh, 580px);
+  }
+}
+
+.camera-guide::before,
+.camera-guide::after {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+}
+
+.camera-guide::before {
+  top: 8px;
+  left: 8px;
+  border-top: 3px solid rgba(255, 255, 255, 0.95);
+  border-left: 3px solid rgba(255, 255, 255, 0.95);
+  border-radius: 4px 0 0 0;
+}
+
+.camera-guide::after {
+  right: 8px;
+  bottom: 8px;
+  border-bottom: 3px solid rgba(255, 255, 255, 0.95);
+  border-right: 3px solid rgba(255, 255, 255, 0.95);
+  border-radius: 0 0 4px 0;
+}
+
+@keyframes cameraGuidePulse {
+  0%, 100% {
+    border-color: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.52), 0 0 18px rgba(255, 255, 255, 0.08);
+  }
+  50% {
+    border-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.48), 0 0 28px rgba(255, 255, 255, 0.16);
+  }
+}
+
+.camera-guide-label {
+  position: absolute;
+  left: 50%;
+  bottom: -2.1rem;
+  transform: translateX(-50%);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.88);
+  white-space: nowrap;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+}
+
+.camera-error {
+  margin: 0 1rem;
+  margin-top: 0.75rem;
+  flex-shrink: 0;
+}
+
+.camera-fallback-btn {
+  margin-top: 0.75rem;
+  width: 100%;
+}
+
+.camera-controls {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  padding: 1rem 1.25rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  background: rgba(10, 10, 15, 0.95);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.camera-shutter-btn {
+  min-width: 160px;
+}
+
+@media (max-width: 480px) {
+  .camera-controls {
+    flex-direction: column;
+  }
+
+  .camera-shutter-btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 .divider { height: 1px; background: var(--border); margin: 0.5rem 0; }
