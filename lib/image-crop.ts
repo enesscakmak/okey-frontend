@@ -8,7 +8,7 @@ export interface CropRect {
 }
 
 /** Çekim çerçevesi en/boy oranı (genişlik / yükseklik). */
-export const GUIDE_ASPECT_RATIO = 1 / 2.0;
+export const GUIDE_ASPECT_RATIO = 1 / 2.3;
 
 /** object-fit: cover ile gösterilen video koordinatlarını gerçek piksel alanına çevirir. */
 export function mapDisplayRectToVideoCoords(
@@ -170,7 +170,9 @@ export async function cropImageFile(
 	const blob = await new Promise<Blob>((resolve, reject) => {
 		canvas.toBlob(
 			(b) =>
-				b ? resolve(b) : reject(new Error(USER_ERRORS.photoCaptureFailed)),
+				b
+					? resolve(b)
+					: reject(new Error(USER_ERRORS.photoCaptureFailed)),
 			"image/jpeg",
 			0.92,
 		);
