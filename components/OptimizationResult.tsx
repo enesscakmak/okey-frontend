@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { OptimizationResult as OptRes, TileSet, Tile } from "@/lib/okey-optimizer";
+import { OptimizationResult as OptRes, TileSet, Tile, SET_TYPE_LABELS } from "@/lib/okey-optimizer";
 import TileCard from "./TileCard";
 
 interface OptimizationResultProps {
@@ -78,7 +78,7 @@ export default function OptimizationResult({ pointsResult, doublesResult, recomm
               {res.sets.map((set, i) => (
                 <div key={i} className="set-group">
                   <div className={`set-group-label ${set.type}-label`}>
-                    {set.type.toUpperCase()} ({set.pointValue} pts)
+                    {SET_TYPE_LABELS[set.type]} ({set.pointValue} puan)
                   </div>
                   <div className="set-tiles">
                     {set.tiles.map((t, j) => (

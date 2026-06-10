@@ -28,10 +28,10 @@ export default function RackDisplay({ tiles, onTilesChange, okeyColor, okeyNumbe
   return (
     <div style={{ marginTop: "1rem" }}>
       <div className="rack-count">
-        <span>Detected Tiles ({tiles.length})</span>
+        <span>Algılanan Taşlar ({tiles.length})</span>
         {onTilesChange && (
           <span style={{ fontSize: "0.75rem", opacity: 0.6 }}>
-            Click any tile to correct its value if detected wrong.
+            Yanlış algılandıysa taşa tıklayarak düzeltebilirsiniz.
           </span>
         )}
       </div>

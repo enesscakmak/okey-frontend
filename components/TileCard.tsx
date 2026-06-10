@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Tile, TileColor, COLORS } from "@/lib/okey-optimizer";
+import { Tile, TileColor, COLORS, COLOR_LABELS } from "@/lib/okey-optimizer";
 
 interface TileCardProps {
   tile: Tile;
@@ -46,16 +46,16 @@ export default function TileCard({ tile, isSelected, isLeftover, interactive, on
 
   return (
     <div className="tile-edit-wrap">
-      <div className={cssClass} onClick={handleEditClick} title={tile.id}>
+      <div className={cssClass} onClick={handleEditClick} title="Düzenlemek için tıklayın">
         <div className="tile-number">{tile.isSahteOkey ? "J" : tile.number}</div>
         {!tile.isSahteOkey && !tile.isOkey && (
-          <div className="tile-color-label">{tile.color}</div>
+          <div className="tile-color-label">{COLOR_LABELS[tile.color]}</div>
         )}
       </div>
 
       {isEditing && interactive && (
         <div className="tile-edit-dropdown" ref={dropdownRef}>
-          <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "0.2rem" }}>Edit Tile</div>
+          <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "0.2rem" }}>Taşı Düzenle</div>
           <div className="tile-edit-row">
             <select
               className="form-select"
@@ -67,11 +67,11 @@ export default function TileCard({ tile, isSelected, isLeftover, interactive, on
                 else handleSave(val as TileColor, tile.number, false);
               }}
             >
-              <option value="red">Red</option>
-              <option value="blue">Blue</option>
-              <option value="black">Black</option>
-              <option value="yellow">Yellow</option>
-              <option value="joker">Sahte Okey (Joker)</option>
+              <option value="red">Kırmızı</option>
+              <option value="blue">Mavi</option>
+              <option value="black">Siyah</option>
+              <option value="yellow">Sarı</option>
+              <option value="joker">Sahte Okey</option>
             </select>
           </div>
           {!tile.isSahteOkey && (

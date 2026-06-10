@@ -23,6 +23,13 @@
 export type TileColor = "red" | "blue" | "black" | "yellow";
 export const COLORS: TileColor[] = ["red", "blue", "black", "yellow"];
 
+export const COLOR_LABELS: Record<TileColor, string> = {
+  red: "Kırmızı",
+  blue: "Mavi",
+  black: "Siyah",
+  yellow: "Sarı",
+};
+
 export interface Tile {
   id: string;          // unique id e.g. "red_5_0"
   color: TileColor;
@@ -35,6 +42,12 @@ export interface Tile {
 }
 
 export type SetType = "seri" | "grup" | "cift";
+
+export const SET_TYPE_LABELS: Record<SetType, string> = {
+  seri: "Seri",
+  grup: "Grup",
+  cift: "Çift",
+};
 
 export interface TileSet {
   type: SetType;

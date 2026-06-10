@@ -20,12 +20,12 @@ export async function POST(req: NextRequest) {
     const tilesOverrideRaw = formData.get("tilesOverride") as string | null;
 
     if (!imageFile && !tilesOverrideRaw) {
-      return NextResponse.json({ error: "No image or tiles provided" }, { status: 400 });
+      return NextResponse.json({ error: "Görsel veya taş bilgisi gönderilmedi." }, { status: 400 });
     }
 
     // Validate gösterge
     if (!gostergeColor || !COLORS.includes(gostergeColor) || isNaN(gostergeNumber)) {
-      return NextResponse.json({ error: "Invalid gösterge tile" }, { status: 400 });
+      return NextResponse.json({ error: "Geçersiz gösterge taşı." }, { status: 400 });
     }
 
     // Derive okey
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             error:
-              "Cannot reach the Python detection server. Please start start_server.bat first.",
+              "Yapay zeka sunucusuna erişilemedi. Lütfen start_server.bat dosyasını çalıştırın.",
           },
           { status: 503 }
         );
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
       if (!flaskRes.ok) {
         const err = await flaskRes.json();
-        return NextResponse.json({ error: err.error ?? "Flask error" }, { status: 500 });
+        return NextResponse.json({ error: err.error ?? "Yapay zeka sunucusu hatası." }, { status: 500 });
       }
 
       const flaskData = await flaskRes.json();
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     console.error("[/api/analyze]", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
+      { error: err instanceof Error ? err.message : "Bilinmeyen bir hata oluştu." },
       { status: 500 }
     );
   }
