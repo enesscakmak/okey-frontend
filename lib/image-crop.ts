@@ -10,6 +10,9 @@ export interface CropRect {
 /** Yatay isteke çerçevesi en/boy oranı (genişlik ÷ yükseklik). */
 export const GUIDE_ASPECT_RATIO = 2.3;
 
+/** Kamera çerçevesi saat yönünde döndürme (derece). */
+export const GUIDE_ROTATION_DEG = 90;
+
 export function computeGuideSize(
 	viewportWidth: number,
 	viewportHeight: number,
@@ -77,6 +80,44 @@ export function mapDisplayRectToVideoCoords(
 	return { x, y, width, height };
 }
 
+/** Viewport merkezindeki dikdörtgeni video koordinatlarına çevirir. */
+export function mapCenteredRectToVideoCoords(
+	video: HTMLVideoElement,
+	container: HTMLElement,
+	width: number,
+	height: number,
+): CropRect {
+	const containerRect = container.getBoundingClientRect();
+	const centerX = containerRect.left + containerRect.width / 2;
+	const centerY = containerRect.top + containerRect.height / 2;
+	const displayRect = new DOMRect(
+		centerX - width / 2,
+		centerY - height / 2,
+		width,
+		height,
+	);
+	return mapDisplayRectToVideoCoords(video, displayRect);
+}
+
+function rotateCanvas(
+	source: HTMLCanvasElement,
+	degrees: 90 | -90,
+): HTMLCanvasElement {
+	const rotated = document.createElement("canvas");
+	const swap = Math.abs(degrees) === 90;
+	rotated.width = swap ? source.height : source.width;
+	rotated.height = swap ? source.width : source.height;
+
+	const ctx = rotated.getContext("2d");
+	if (!ctx) throw new Error(USER_ERRORS.imageProcessFailed);
+
+	ctx.translate(rotated.width / 2, rotated.height / 2);
+	ctx.rotate((degrees * Math.PI) / 180);
+	ctx.drawImage(source, -source.width / 2, -source.height / 2);
+
+	return rotated;
+}
+
 export function expandCropRect(
 	rect: CropRect,
 	paddingRatio: number,
@@ -112,15 +153,25 @@ export function expandCropRect(
 
 export async function captureAndCropVideoFrame(
 	video: HTMLVideoElement,
-	guideElement: HTMLElement,
+	container: HTMLElement,
+	logicalWidth: number,
+	logicalHeight: number,
 	paddingRatio = 0.05,
+	rotationDeg = GUIDE_ROTATION_DEG,
 ): Promise<Blob> {
 	if (video.videoWidth === 0 || video.videoHeight === 0) {
 		throw new Error(USER_ERRORS.cameraNotReady);
 	}
 
-	const displayRect = guideElement.getBoundingClientRect();
-	const baseCrop = mapDisplayRectToVideoCoords(video, displayRect);
+	const cropW = rotationDeg % 180 === 90 ? logicalHeight : logicalWidth;
+	const cropH = rotationDeg % 180 === 90 ? logicalWidth : logicalHeight;
+
+	const baseCrop = mapCenteredRectToVideoCoords(
+		video,
+		container,
+		cropW,
+		cropH,
+	);
 	const crop = expandCropRect(
 		baseCrop,
 		paddingRatio,
@@ -147,7 +198,12 @@ export async function captureAndCropVideoFrame(
 		crop.height,
 	);
 
-	return canvasToBlob(canvas);
+	const output =
+		rotationDeg === 90 && canvas.height > canvas.width
+			? rotateCanvas(canvas, -90)
+			: canvas;
+
+	return canvasToBlob(output);
 }
 
 /** Dosyadan gelen görseli yatay isteke çerçevesine göre kırpar. */

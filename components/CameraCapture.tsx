@@ -4,8 +4,13 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   captureAndCropVideoFrame,
   computeGuideSize,
-  isLandscapeOrientation,
+  GUIDE_ROTATION_DEG,
 } from "@/lib/image-crop";
+import {
+  isOrientationLockSupported,
+  lockPortraitOrientation,
+  unlockPortraitOrientation,
+} from "@/lib/orientation-lock";
 import { USER_ERRORS, getUserErrorMessage } from "@/lib/user-errors";
 
 interface CameraCaptureProps {
@@ -29,12 +34,10 @@ export default function CameraCapture({
   const [error, setError] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isReady, setIsReady] = useState(false);
-  const [isLandscape, setIsLandscape] = useState(true);
+  const [orientationLocked, setOrientationLocked] = useState(false);
   const [guideSize, setGuideSize] = useState({ width: 0, height: 0 });
 
   const updateLayout = useCallback(() => {
-    setIsLandscape(isLandscapeOrientation());
-
     const viewport = viewportRef.current;
     if (!viewport) return;
 
@@ -47,11 +50,15 @@ export default function CameraCapture({
   useEffect(() => {
     if (!open) return;
 
+    let active = true;
+
+    void lockPortraitOrientation().then((locked) => {
+      if (active) setOrientationLocked(locked);
+    });
+
     updateLayout();
 
     window.addEventListener("resize", updateLayout);
-    window.addEventListener("orientationchange", updateLayout);
-
     const viewport = viewportRef.current;
     const observer =
       viewport && typeof ResizeObserver !== "undefined"
@@ -60,8 +67,10 @@ export default function CameraCapture({
     if (viewport && observer) observer.observe(viewport);
 
     return () => {
+      active = false;
+      unlockPortraitOrientation();
+      setOrientationLocked(false);
       window.removeEventListener("resize", updateLayout);
-      window.removeEventListener("orientationchange", updateLayout);
       observer?.disconnect();
     };
   }, [open, updateLayout]);
@@ -119,14 +128,22 @@ export default function CameraCapture({
 
   const handleCapture = async () => {
     const video = videoRef.current;
-    const guide = guideRef.current;
-    if (!video || !guide || !isReady || isCapturing || !isLandscape) return;
+    const viewport = viewportRef.current;
+    if (!video || !viewport || !isReady || isCapturing) return;
+    if (guideSize.width === 0 || guideSize.height === 0) return;
 
     setIsCapturing(true);
     setError(null);
 
     try {
-      const blob = await captureAndCropVideoFrame(video, guide, 0.05);
+      const blob = await captureAndCropVideoFrame(
+        video,
+        viewport,
+        guideSize.width,
+        guideSize.height,
+        0.05,
+        GUIDE_ROTATION_DEG,
+      );
       const file = new File([blob], `isteke-${Date.now()}.jpg`, {
         type: "image/jpeg",
       });
@@ -161,10 +178,13 @@ export default function CameraCapture({
         <div className="camera-header-text">
           <strong>Telefonu Yatay Tutun</strong>
           <span>
-            {isLandscape
-              ? "İstekeyi yatay çerçeveye hizalayın, taşlar net görünsün"
-              : "Çekim için telefonu yatay çevirin"}
+            Ekran dikey kalır; telefonu yan çevirip istekeyi çerçeveye hizalayın
           </span>
+          {!orientationLocked && isOrientationLockSupported() === false && (
+            <span className="camera-orientation-hint">
+              Ekran kilidi bu tarayıcıda desteklenmiyor; uygulamayı dikey tutun
+            </span>
+          )}
         </div>
       </div>
 
@@ -184,6 +204,7 @@ export default function CameraCapture({
             style={{
               width: guideSize.width || undefined,
               height: guideSize.height || undefined,
+              transform: `rotate(${GUIDE_ROTATION_DEG}deg)`,
             }}
           >
             <span className="camera-guide-label">Çekim alanı</span>
@@ -221,7 +242,7 @@ export default function CameraCapture({
           type="button"
           className="btn btn-primary camera-shutter-btn"
           onClick={handleCapture}
-          disabled={!isReady || isCapturing || !isLandscape}
+          disabled={!isReady || isCapturing}
         >
           {isCapturing ? (
             <>

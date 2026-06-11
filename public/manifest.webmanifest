@@ -1,0 +1,10 @@
+{
+  "name": "Okey Oyun Asistanı",
+  "short_name": "Okey",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "lang": "tr"
+}

@@ -745,6 +745,14 @@ body::before {
   color: var(--text-muted);
 }
 
+.camera-orientation-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.72rem !important;
+  color: var(--tile-yellow) !important;
+  opacity: 0.95;
+}
+
 .camera-viewport {
   position: relative;
   flex: 1;
@@ -772,6 +780,7 @@ body::before {
 .camera-guide {
   position: relative;
   flex-shrink: 0;
+  transform-origin: center center;
   border: 2px dashed rgba(255, 255, 255, 0.82);
   border-radius: 14px;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.52);
